@@ -1,12 +1,15 @@
 libsLoadedArray = [];
 function FantiaParser() {
-	var CONST_IMAGE_FORMAT = "image/png";
-	var CONST_IMAGE_QUILITY = 1.0;
 	var CONST_LIB_JSZIP = "https://microsoft6477.github.io/lib/jszip.min.js";
 
-	var baseURL = window.location.href;
-	var postNumber = baseURL.split("/");
-	postNumber = postNumber[postNumber.length - 1];
+	var _self = this;
+
+	var _baseURL = window.location.href;
+	var _postID = _baseURL.split("/");
+	_postID = _postID[_postID.length - 1];
+
+	var _author = !_self.config.author ? document.querySelector('.fanclub-name').textContent : _self.config.author;
+	var _jsonTemplet = {author: _author, postID: _postID, files: []};
 	
 	return {
 		_getHtmlContentsASync: function(URLs) {
@@ -59,7 +62,6 @@ function FantiaParser() {
 						};
 						document.body.append(script);
 					})(script, totalCount, loadedCount);
-					
 				}
 			});
 			
@@ -86,7 +88,7 @@ function FantiaParser() {
 
 			var ctx = canvas.getContext("2d");
 			ctx.drawImage(img, 0, 0, img.width, img.height);
-			return canvas.toDataURL(CONST_IMAGE_FORMAT);
+			return canvas.toDataURL(_self.config.imageFormat, _self.config.imageQuility);
 		},
 		saveAs: function(blob, filename) {
 			var a = document.createElement("a");
@@ -110,29 +112,17 @@ function FantiaParser() {
 				}));
 			});
 		},
-		createElementTextASync: function() {
-			// var arr = [];
-			// var imgUrls = this.parseImageURLs();
-			// for(var url of URLs) {
-			// 	arr.push(`<span>${(arr.length % 4 + 1)}/${imgUrls.length}</span>`);
-			// 	arr.push("<br>");
-			// 	arr.push(`<img src="${url}" style="width: 50px; height: 50px">`);
-			// 	arr.push("<br>");
-			// }
-			
-			// return arr.join("");
-		},
 		download: function(startNumber = 1) {
 			var self = this;
 			this._loadLibASync(CONST_LIB_JSZIP).then(() => {
 				console.log("============parse image urls============");
-				return this._getHtmlContentsASync(this.parseImageIDs().map(item => `${baseURL}/post_content_photo/${item}`));
+				return this._getHtmlContentsASync(this.parseImageIDs().map(item => `${_baseURL}/post_content_photo/${item}`));
 			}).then(htmlContents => {
 				return this.parseImageUrlsASync(htmlContents);
 			}).then(imgUrls => {
 				var cachedCount = 0;
 				var zip = new JSZip();
-				var folder = zip.folder("幾月先人");
+				var folder = zip.folder(_author);
 				console.log("============cache image files============");
 				var img = document.createElement("img");
 				img.setAttribute("crossOrigin", "Anonymous");
@@ -141,18 +131,28 @@ function FantiaParser() {
 					cachedCount ++;
 					var base64 = self._convImage2Base64(this);
 					base64 = base64.split(";base64,");
+					var filename = `${_postID}${("00000" + (startNumber + cachedCount - 1)).substr(-5)}.${base64[0].split("/")[1]}`;
 					folder.file(
-						`${startNumber + cachedCount - 1}.${base64[0].split("/")[1]}`,
+						filename,
 						base64[1],
 						{base64: true}
 					);
 					console.log(`images cached: ${cachedCount}/${imgUrls.length}`);
+					if(_self.config.isGenerateJsonFile) 
+						_jsonTemplet.files.push(filename);
 					if(cachedCount < imgUrls.length) {
 						img.src = imgUrls[cachedCount];
 					}
 					if(cachedCount === imgUrls.length) {
+						if(_self.config.isGenerateJsonFile) {
+							zip.folder("./").file(
+								"package.json",
+								JSON.stringify(_jsonTemplet),
+								{base64: false}
+							);
+						}
 						zip.generateAsync({type: "blob"}).then((content) => {
-							self.saveAs(content, `fantia_${postNumber}.zip`);
+							self.saveAs(content, `fantia_${_postID}.zip`);
 						});
 					}
 				};
@@ -161,6 +161,13 @@ function FantiaParser() {
 		}
 	};
 }
+
+FantiaParser.prototype.config = {
+	isGenerateJsonFile: true,	// 一般不用开, 这个只是为了我自己用
+	imageFormat: "image/png",	// 生成的图片格式, 比如image/png, image/jpeg
+	imageQuility: 1.0,			// 只有格式是 "image/jpeg" 的时候才有效
+	author: ""					// 如果不填写, 或者填写false, 或者null的话, 则程序从页面上扒上传者名字
+};
 
 (new FantiaParser()).download();
 
