@@ -10,7 +10,10 @@ function FantiaParser() {
 
 	var _author = !_self.config.author ? document.querySelector('.fanclub-name').textContent : _self.config.author;
 	var _jsonTemplet = {author: _author, postID: _postID, files: []};
+	var _imageContainers = document.querySelectorAll(".post-content");
 	
+	var _startNumber = 0;
+	var _monthly = 500;
 	return {
 		_getHtmlContentsASync: function(URLs) {
 			if(Object.prototype.toString.call(URLs) === "[object String]")
@@ -68,13 +71,13 @@ function FantiaParser() {
 		},
 		_getExpectImgElements: function() {
 			var expectImageElements = [];
-			var container = document.querySelectorAll('.post-content');
-			for(var el of container) {
-				var sign500 = el.querySelectorAll("span.ng-binding");
-				if(sign500.length === 0)
+			for(var el of _imageContainers) {
+				var monthly = el.querySelectorAll("span.ng-binding");
+				if(monthly.length === 0)
 					continue;
-				sign500 = sign500[0].textContent;	
-				if(sign500.includes("（500円）") || sign500.includes("（500日元）")) {
+				monthly = monthly[0].textContent;
+				monthly = parseInt(monthly.replace(/[^0-9]/ig, ""));
+				if(monthly === _monthly) { 
 					var imgs = el.querySelectorAll("img[alt]");
 					expectImageElements = expectImageElements.concat(...imgs);
 				}
@@ -112,7 +115,14 @@ function FantiaParser() {
 				}));
 			});
 		},
-		download: function(startNumber = 1) {
+		download: function(param) {		// {startNum: Number, monthly: Number}
+			if(Object.prototype.toString.call(param) !== "[object Object]") {
+				return;
+			}
+			_startNum = param.startNum || 1;
+			_monthly = param.monthly || 500;
+
+
 			var self = this;
 			this._loadLibASync(CONST_LIB_JSZIP).then(() => {
 				console.log("============parse image urls============");
@@ -131,7 +141,7 @@ function FantiaParser() {
 					cachedCount ++;
 					var base64 = self._convImage2Base64(this);
 					base64 = base64.split(";base64,");
-					var filename = `${_postID}${("00000" + (startNumber + cachedCount - 1)).substr(-5)}.${base64[0].split("/")[1]}`;
+					var filename = `${_postID}${("00000" + (_startNumber + cachedCount - 1)).substr(-5)}.${base64[0].split("/")[1]}`;
 					folder.file(
 						filename,
 						base64[1],
@@ -169,5 +179,8 @@ FantiaParser.prototype.config = {
 	author: ""					// 如果不填写, 或者填写false, 或者null的话, 则程序从页面上扒上传者名字
 };
 
-(new FantiaParser()).download();
+
+// 记得该参数, startNum指的是下载第一个图片的编号是从哪里开始, 前缀为该相册的ID, 就是URL后面那个数字
+// monthly为月供钱数, 比如默认下载的是500日元的
+(new FantiaParser()).download({startNum: 1, monthly: 500});
 
