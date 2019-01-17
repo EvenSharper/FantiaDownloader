@@ -67,7 +67,6 @@ function FantiaParser() {
 					})(script, totalCount, loadedCount);
 				}
 			});
-			
 		},
 		_getExpectImgElements: function() {
 			var expectImageElements = [];
@@ -141,7 +140,7 @@ function FantiaParser() {
 					cachedCount ++;
 					var base64 = self._convImage2Base64(this);
 					base64 = base64.split(";base64,");
-					var filename = `${_postID}${("00000" + (_startNumber + cachedCount - 1)).substr(-5)}.${base64[0].split("/")[1]}`;
+					var filename = `${_postID}-${_startNumber + cachedCount}.${base64[0].split("/")[1]}`;
 					folder.file(
 						filename,
 						base64[1],
@@ -156,7 +155,7 @@ function FantiaParser() {
 					if(cachedCount === imgUrls.length) {
 						if(_self.config.isGenerateJsonFile) {
 							zip.folder("./").file(
-								"package.json",
+								`${_postID}.json`,
 								JSON.stringify(_jsonTemplet),
 								{base64: false}
 							);
