@@ -51,9 +51,7 @@ function FantiaDownloader() {
             if(price === this.config.price) {
                 let images = el.querySelectorAll("img[alt]");
                 for(let image of images) {
-                    let imageSrc = image.src;
-                    let imageId = imageSrc.substring(imageSrc.indexOf("/file/") + 6, imageSrc.indexOf("/thumb")).replace(/[^0-9]/ig, "")
-                                || imageSrc.substring(imageSrc.indexOf("/file/") + 6, imageSrc.indexOf("/main")).replace(/[^0-9]/ig, "");
+                    let imageId = image.src.split("/file/")[1].split("/")[0];
                     targetPageURLs.push(`${_baseURL}/post_content_photo/${imageId}`);
                 }
             }
@@ -146,7 +144,7 @@ function FantiaDownloader() {
 }
 
 FantiaDownloader.prototype.config = {
-    price: 300,
+    price: 500,
     isGenerateJsonFile: true,
     imageFormate: "image/png",
     imageQuility: 1.0,
