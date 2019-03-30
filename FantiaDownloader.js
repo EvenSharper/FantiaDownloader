@@ -1,4 +1,4 @@
-var loadedLibs = [];
+﻿let loadedLibs = [];
 function FantiaDownloader() {
     const LIB_JSZIP = "https://microsoft6477.github.io/lib/jszip.min.js";
     let _baseURL = window.location.href,
@@ -43,13 +43,17 @@ function FantiaDownloader() {
             let price = el.querySelectorAll("span.ng-binding");
             if(price.length === 0)
                 continue;
-            price = price[0].textContent;
+            price = price[0].textContent.split("（");
+            if(price.length < 2)
+                continue;
+            price = price[1];
             price = parseInt(price.replace(/[^0-9]/ig, ""));
             if(price === this.config.price) {
                 let images = el.querySelectorAll("img[alt]");
                 for(let image of images) {
                     let imageSrc = image.src;
-                    let imageId = imageSrc.substring(imageSrc.indexOf("/file/") + 6, imageSrc.indexOf("/thumb"));
+                    let imageId = imageSrc.substring(imageSrc.indexOf("/file/") + 6, imageSrc.indexOf("/thumb")).replace(/[^0-9]/ig, "")
+                                || imageSrc.substring(imageSrc.indexOf("/file/") + 6, imageSrc.indexOf("/main")).replace(/[^0-9]/ig, "");
                     targetPageURLs.push(`${_baseURL}/post_content_photo/${imageId}`);
                 }
             }
@@ -142,7 +146,7 @@ function FantiaDownloader() {
 }
 
 FantiaDownloader.prototype.config = {
-    price: 500,
+    price: 300,
     isGenerateJsonFile: true,
     imageFormate: "image/png",
     imageQuility: 1.0,
